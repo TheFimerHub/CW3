@@ -1,6 +1,8 @@
-import pytest
-from flask import Flask, render_template, request
+import logging
+from flask import Flask, render_template, request, jsonify
 from utils import *
+
+logging.basicConfig(filename="logs/api.log", level=logging.INFO)
 
 app = Flask(__name__, template_folder='templates')
 
@@ -20,7 +22,7 @@ def id_page(post_id):
 
 @app.route("/search/")
 def search_page():
-    search = request.args.get('s')
+    search = request.args.get('s').lower()
     posts = search_for_posts(search)
     return render_template("search.html", posts=posts)
 
@@ -29,6 +31,20 @@ def search_page():
 def user_posts(user_name):
     posts = get_posts_by_user(user_name)
     return render_template("user-feed.html", posts=posts)
+
+
+@app.route('/api/posts')
+def api_posts_page():
+    logging.info(' Запрос /api/posts')
+    posts = get_posts_all()
+    return jsonify(posts)
+
+
+@app.route('/api/post/<int:post_id>')
+def api_id_page(post_id):
+    logging.info(f' Запрос /api/post/{post_id}')
+    post = get_post_by_pk(post_id)
+    return jsonify(post)
 
 
 @app.errorhandler(404)
@@ -43,4 +59,5 @@ def pageNotFount(e):
     return render_template('page_error.html', title="Страница не найдена", er=er)
 
 
-app.run()
+if __name__ == '__main__':
+    app.run()
